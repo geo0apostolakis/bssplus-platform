@@ -3,191 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BSSPlus Private AI Chatbot</title>
-    
+    <title>BSSPlus Manager Platform</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- External Libraries for Functionality and Effects -->
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Icon Library (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Animation Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <!-- Charting Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
-        /* --- DARK THEME STYLES (FROM USER REFERENCE) --- */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f1117; /* Darkest Background */
-            color: #f1f5f9; /* Light Text */
+            background-color: #f7f9fc;
         }
-
-        /* Input/Select/Textarea Background & Border */
-        input[type="text"], textarea, select {
-            background-color: #0f1117 !important; 
-            border-color: #374151 !important; /* Gray-700 */
-            color: #f1f5f9 !important;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        /* Card Background */
-        .card-bg {
-            background-color: #1a1d25; /* Slightly lighter dark background for cards */
-            border: 1px solid #1f2937; /* Gray-800 border */
-        }
-        
-        /* Hover Effect */
-        .card-hover {
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.2);
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
         }
-
-        /* Modal Backdrop and Active State */
+        .btn-primary {
+            background-color: #0d6efd;
+            box-shadow: 0 4px 6px -1px rgba(13, 110, 253, 0.3), 0 2px 4px -2px rgba(13, 110, 253, 0.2);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+        }
         .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 50;
-            justify-content: center;
-            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
         }
-        .modal.active {
-            display: flex;
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-    <!-- Header -->
-    <header class="card-bg border-b border-gray-800 sticky top-0 z-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <a href="index.html" class="text-xl font-bold text-white">Automatesphere <span class="text-blue-500">AI </span></a>
-            
-            <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-400 hidden sm:inline">Logged in as: <strong>admin</strong></span>
-                <button id="logout-btn" onclick="platform.logout()"
-                        class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-md">
-                    Logout
-                </button>
+    <!-- Supabase Configuration Warning -->
+    <div id="config-warning" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert" style="display:none;">
+        <p class="font-bold">Supabase Configuration Required</p>
+        <p>Please update **SUPABASE_URL** and **SUPABASE_ANON_KEY** in the script section to connect to your database.</p>
+    </div>
+
+    <!-- Header / Navigation -->
+    <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-extrabold text-[#0d6efd]">BSSPlus</span>
+                    <span class="text-xl font-light text-gray-500 ml-1">Manager</span>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-[#0d6efd] font-medium transition duration-150">Dashboard</a>
+                    <a href="#" class="text-gray-400 hover:text-gray-600 transition duration-150">Analytics</a>
+                    <a href="#" class="text-gray-400 hover:text-gray-600 transition duration-150">Settings</a>
+                </nav>
+                <div class="flex items-center space-x-3">
+                    <button onclick="platform.logout()" class="text-sm font-medium text-gray-600 hover:text-red-500 transition duration-150 p-2 rounded-full hover:bg-gray-100">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                    <!-- User Profile/Avatar Placeholder -->
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-semibold text-sm">
+                        AD
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
-    <!-- Hero -->
-    <section class="text-center py-16 bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-800 shadow-xl">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 tracking-tight text-white">
-                <span id="hero-title"></span>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 animate-slide-in">
+                Content Management Dashboard
             </h1>
-            <p class="text-xl sm:text-2xl font-light text-gray-300 max-w-2xl mx-auto">
-                Manage, edit, and publish your content seamlessly.
-            </p>
-            <button onclick="openAddModal()" 
-                    class="mt-8 px-8 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-all hover:scale-[1.02] shadow-lg">
-                + Add New Post
+            <button onclick="openAddModal()"
+                    class="btn-primary text-white flex items-center space-x-2 px-4 py-2 rounded-lg font-medium hover:scale-[1.02] transition-transform shadow-lg shadow-blue-300/50">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                <span>New Post</span>
             </button>
         </div>
-    </section>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-20">
-        
-        <!-- Dashboard Charts -->
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-            
-            <div class="card-bg p-6 rounded-xl shadow-lg card-hover">
-                <h2 class="text-xl font-semibold text-white mb-4">Post Distribution by Category</h2>
-                <div id="category-chart" style="height: 300px;"></div>
-            </div>
-            
-            <div class="card-bg p-6 rounded-xl shadow-lg card-hover">
-                <h2 class="text-xl font-semibold text-white mb-4">Content Trends (Simulated)</h2>
-                <div id="trends-chart" style="height: 300px;"></div>
-            </div>
-        </section>
-
-        <!-- Content Management Section -->
-        <section class="card-bg p-6 rounded-xl shadow-lg">
-            <h2 class="text-2xl font-bold text-white mb-6">Content Management</h2>
-            
-            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
-                <div class="relative flex-grow">
-                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    <input type="text" id="search-input" oninput="platform.handleSearch(this.value)"
-                           placeholder="Search posts by title, content, or tags..."
-                           class="w-full pl-10 pr-4 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <!-- Total Posts Card -->
+            <div class="card p-6 flex items-center justify-between border-b-4 border-blue-500">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Posts</p>
+                    <p id="stat-total-posts" class="text-3xl font-extrabold text-gray-900 mt-1">0</p>
                 </div>
-                
-                <select id="category-filter" onchange="platform.handleCategoryFilter(this.value)"
-                        class="w-full sm:w-1/4 px-4 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    <option value="">Filter by Category</option>
-                    <option value="announcements">Announcements</option>
-                    <option value="guidelines">Guidelines</option>
-                    <option value="updates">Updates</option>
-                    <option value="training">Training</option>
-                    <option value="policies">Policies</option>
-                </select>
+                <i data-lucide="layers" class="w-8 h-8 text-blue-500 opacity-70"></i>
+            </div>
+            <!-- Average Length Card -->
+            <div class="card p-6 flex items-center justify-between border-b-4 border-green-500">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Avg. Word Count</p>
+                    <p id="stat-avg-words" class="text-3xl font-extrabold text-gray-900 mt-1">0</p>
+                </div>
+                <i data-lucide="pen-tool" class="w-8 h-8 text-green-500 opacity-70"></i>
+            </div>
+            <!-- Unique Tags Card -->
+            <div class="card p-6 flex items-center justify-between border-b-4 border-yellow-500">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Unique Tags</p>
+                    <p id="stat-unique-tags" class="text-3xl font-extrabold text-gray-900 mt-1">0</p>
+                </div>
+                <i data-lucide="tags" class="w-8 h-8 text-yellow-500 opacity-70"></i>
+            </div>
+            <!-- Drafts Card -->
+            <div class="card p-6 flex items-center justify-between border-b-4 border-red-500">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Drafts</p>
+                    <p id="stat-drafts" class="text-3xl font-extrabold text-gray-900 mt-1">0</p>
+                </div>
+                <i data-lucide="clipboard-list" class="w-8 h-8 text-red-500 opacity-70"></i>
+            </div>
+        </div>
 
-                <button onclick="clearFilters()"
-                        class="w-full sm:w-auto px-4 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+        <!-- Visualization/Chart Area -->
+        <div class="card p-6 mb-12">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Post Tag Distribution</h2>
+            <div id="tag-chart" class="w-full h-80"></div>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="card p-4 flex flex-wrap gap-4 items-center justify-between mb-8">
+            <div class="flex-grow max-w-lg">
+                <div class="relative">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="search-input" onkeyup="platform.filterPosts()"
+                           placeholder="Search by title or content..."
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="clearFilters()" id="clear-filters-btn" disabled
+                        class="text-sm px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition">
                     Clear Filters
                 </button>
+                <select id="sort-select" onchange="platform.filterPosts()"
+                        class="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="title-asc">Title (A-Z)</option>
+                </select>
             </div>
+        </div>
 
-            <!-- Post Card Grid -->
-            <section id="posts-container" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <p class="text-gray-400 col-span-full text-center py-10">Loading posts...</p>
-            </section>
-
-        </section>
+        <!-- Posts List -->
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Content Feed</h2>
+        <div id="posts-list" class="space-y-4">
+            <!-- Posts will be injected here by JavaScript -->
+            <p id="loading-message" class="text-center text-gray-500 p-8">Loading posts from Supabase...</p>
+        </div>
+        
+        <div id="no-results" class="hidden text-center text-gray-500 p-8 card mt-8">
+            <i data-lucide="folder-x" class="w-12 h-12 mx-auto mb-4 text-gray-400"></i>
+            <p class="text-xl font-medium">No results found.</p>
+            <p class="text-sm mt-1">Try adjusting your search or filters.</p>
+        </div>
     </main>
 
-    <!-- Modal for Add/Edit Posts -->
-    <div id="post-modal" class="modal" onclick="if(event.target.id === 'post-modal') platform.closeModal()">
-        <div class="card-bg rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-8 transform transition-transform duration-300">
-            <h2 id="modal-title" class="text-3xl font-bold text-white mb-6 border-b border-gray-700 pb-3">Add New Post</h2>
-            
-            <form id="post-form" class="space-y-5">
-                <div>
-                    <label for="post-title" class="block text-sm font-medium text-gray-400 mb-2">Title</label>
-                    <input type="text" id="post-title" required 
-                           placeholder="Enter post title"
-                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+    <!-- Post Add/Edit Modal -->
+    <div id="post-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="card w-full max-w-xl mx-4 p-6 md:p-8 transform translate-y-2 scale-95 transition-all duration-300">
+            <h2 id="modal-title" class="text-2xl font-bold text-gray-900 mb-6">Add New Post</h2>
+            <form id="post-form">
+                <input type="hidden" id="post-id">
+                <div class="mb-4">
+                    <label for="post-title" class="block text-sm font-medium text-gray-700 mb-2">Title <span class="text-red-500">*</span></label>
+                    <input type="text" id="post-title" required
+                           placeholder="Enter a descriptive title"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 </div>
-                <div>
-                    <label for="post-category" class="block text-sm font-medium text-gray-400 mb-2">Category</label>
-                    <select id="post-category" required
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="announcements">Announcements</option>
-                        <option value="guidelines">Guidelines</option>
-                        <option value="updates">Updates</option>
-                        <option value="training">Training</option>
-                        <option value="policies">Policies</option>
-                    </select>
+                <div class="mb-4">
+                    <label for="post-content" class="block text-sm font-medium text-gray-700 mb-2">Content <span class="text-red-500">*</span></label>
+                    <textarea id="post-content" required rows="6"
+                              placeholder="Write the full content of your article here..."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y transition"></textarea>
                 </div>
-                <div>
-                    <label for="post-content" class="block text-sm font-medium text-gray-400 mb-2">Content</label>
-                    <textarea id="post-content" rows="6" required 
-                              placeholder="Write your main content here..."
-                              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-2">Tags (comma-separated)</label>
-                    <input type="text" id="post-tags" 
+                <div class="mb-6">
+                    <label for="post-tags" class="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
+                    <input type="text" id="post-tags"
                            placeholder="e.g., business, consulting, digital transformation"
-                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 </div>
                 <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" onclick="platform.closeModal()" 
-                            class="px-5 py-2 text-gray-400 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors">
+                    <button type="button" onclick="closeModal()"
+                            class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
                         Cancel
                     </button>
-                    <button type="submit" 
-                            class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-transform shadow-md">
+                    <button type="submit" id="save-post-btn"
+                            class="btn-primary text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition-transform">
                         Save Post
                     </button>
                 </div>
@@ -195,506 +221,466 @@
         </div>
     </div>
 
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
     <!-- Footer -->
-    <footer class="card-bg border-t border-gray-800 text-center py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p class="text-gray-500">&copy; 2024 Automatesphere AI. All rights reserved.</p>
+    <footer class="bg-white border-t border-gray-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <p class="text-gray-600">&copy; 2024 BSSPlus - Building Solid Success. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 
-    <!-- Embedded JavaScript (BSSPlusPlatform class with localStorage logic) -->
     <script>
-// BSSPlus Platform Main JavaScript - Data stored in localStorage (Client-Side Persistence)
-class BSSPlusPlatform {
-    constructor() {
-        // Load data from localStorage
-        this.posts = JSON.parse(localStorage.getItem('bssplus_posts') || '[]');
-        this.currentEditId = null;
-        this.init();
-    }
+        // Supabase Configuration - **MUST BE UPDATED**
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE'; // Replace with your project URL
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE'; // Replace with your public anonymous key
 
-    init() {
-        if (this.posts.length === 0) {
-            this.loadSampleData();
-        } else {
-            this.renderPosts();
-        }
-        this.setupEventListeners();
-        this.initializeAnimations();
-        this.renderCharts();
-        this.initializeAPI();
-    }
-
-    // --- Core Data Management (localStorage) ---
-    saveDataToLocalStorage() {
-        localStorage.setItem('bssplus_posts', JSON.stringify(this.posts));
-        this.renderPosts();
-        this.renderCharts();
-    }
-
-    loadSampleData() {
-        this.posts = [
-            {
-                id: 1,
-                title: "Welcome to BSSPlus Platform",
-                category: "announcements",
-                content: "Welcome to our new content management platform! This system allows you to create, manage, and organize all your business content efficiently.",
-                author: "System Administrator",
-                createdDate: "2024-10-15",
-                modifiedDate: "2024-10-15",
-                tags: ["welcome", "platform", "introduction"],
-                status: "published"
-            },
-            {
-                id: 2,
-                title: "Digital Transformation Strategy Guidelines",
-                category: "guidelines",
-                content: "Comprehensive guide to implementing digital transformation in your organization. This document covers key strategies, best practices, and step-by-step approaches.",
-                author: "Digital Strategy Team",
-                createdDate: "2024-10-10",
-                modifiedDate: "2024-10-12",
-                tags: ["digital transformation", "strategy", "guidelines"],
-                status: "published"
-            },
-            {
-                id: 3,
-                title: "ESPA Programs Update 2024 - New Funding Opportunities",
-                category: "updates",
-                content: "Latest updates on ESPA (European Structural and Investment Funds) programs available for Greek businesses. This post contains important information about new funding opportunities and deadlines for Q4.",
-                author: "Funding Advisory Team",
-                createdDate: "2024-10-08",
-                modifiedDate: "2024-10-08",
-                tags: ["ESPA", "funding", "programs", "2024"],
-                status: "published"
-            },
-            {
-                id: 4,
-                title: "Mandatory New Employee Training Module",
-                category: "training",
-                content: "All new employees must complete the BSSPlus Core Principles training module within their first two weeks. Failure to complete may affect access to internal resources.",
-                author: "HR Department",
-                createdDate: "2024-10-01",
-                modifiedDate: "2024-10-01",
-                tags: ["HR", "onboarding", "compliance"],
-                status: "published"
+        // Initialize Supabase Client
+        let supabaseClient;
+        try {
+            if (SUPABASE_URL.includes('YOUR_SUPABASE_URL') || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')) {
+                throw new Error("Supabase credentials not configured.");
             }
-        ];
-        this.saveDataToLocalStorage();
-    }
-    
-    // --- Public API Mock (For demonstration/integration) ---
-    initializeAPI() {
-        window.BSSPlusAPI = {
-            getAllPosts: () => ({ success: true, data: this.posts, count: this.posts.length }),
-            getPost: (id) => ({ success: true, data: this.posts.find(p => p.id === parseInt(id)) }),
-            searchPosts: (query) => this.searchPosts(query).data,
-        };
-    }
-    
-    // --- Authentication (Placeholder) ---
-    logout() {
-        localStorage.removeItem('bssplus_posts'); // Clear data on logout for a clean demo
-        localStorage.removeItem('bssplus_logged_in');
-        localStorage.removeItem('bssplus_username');
-        this.showNotification('You have been logged out!', 'info');
-        // window.location.reload(); // Uncomment to simulate logout refresh
-    }
-
-    // --- Rendering and Filtering (Now using Card Grid) ---
-    renderPosts(postsToRender = this.posts) {
-        const container = document.getElementById('posts-container');
-        if (!container) return;
-
-        container.innerHTML = '';
-
-        if (postsToRender.length === 0) {
-            container.innerHTML = `
-                <p class="text-gray-400 col-span-full text-center py-10">
-                    No posts found matching your filter criteria.
-                </p>
-            `;
-            return;
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (error) {
+            console.error("Supabase Initialization Error:", error.message);
+            document.getElementById('config-warning').style.display = 'block';
         }
 
-        postsToRender.forEach(post => {
-            const div = document.createElement('div');
-            div.className = 'card-bg border border-gray-800 rounded-xl p-6 card-hover flex flex-col justify-between';
-            
-            const categoryStyles = {
-                announcements: 'bg-blue-600',
-                guidelines: 'bg-green-600',
-                updates: 'bg-yellow-600',
-                training: 'bg-purple-600',
-                policies: 'bg-red-600'
-            };
-            const categoryClass = categoryStyles[post.category] || 'bg-gray-600';
 
-            const truncatedContent = post.content.substring(0, 150) + (post.content.length > 150 ? '...' : '');
+        // BSSPlus Platform Main JavaScript
+        class BSSPlusPlatform {
+            constructor() {
+                this.posts = [];
+                this.currentEditId = null;
+                this.init();
+            }
 
-            div.innerHTML = `
-                <div>
-                    <span class="text-xs font-semibold px-2 py-1 rounded-full text-white ${categoryClass} mb-3 inline-block">
-                        ${post.category.charAt(0).toUpperCase() + post.category.slice(1)}
-                    </span>
-                    <h3 class="text-xl font-bold text-white mb-2">${post.title}</h3>
-                    <p class="text-sm text-gray-400 mb-4">${truncatedContent}</p>
-                </div>
+            init() {
+                this.checkConfiguration();
+                this.setupEventListeners();
+                this.renderPosts();
+                this.listenForRealtimeUpdates(); // Setup real-time listener
+            }
+
+            checkConfiguration() {
+                if (!supabaseClient) {
+                    this.showNotification("Supabase is not configured. Data persistence will not work.", 'error');
+                }
+            }
+
+            // --- Supabase Data Operations ---
+
+            async fetchPosts() {
+                if (!supabaseClient) return [];
+                const { data, error } = await supabaseClient
+                    .from('posts')
+                    .select('id, title, content, tags, created_at');
+
+                if (error) {
+                    console.error('Error fetching posts:', error);
+                    this.showNotification(`Error loading posts: ${error.message}`, 'error');
+                    return [];
+                }
                 
-                <div class="pt-4 border-t border-gray-700 mt-auto">
-                    <p class="text-xs text-gray-500 mb-3">By ${post.author} on ${this.formatDate(post.createdDate)}</p>
-                    <div class="flex items-center space-x-4 text-sm font-medium">
-                        <button onclick="platform.viewPost(${post.id})" 
-                                class="text-blue-500 hover:text-blue-400 transition-colors">
-                            View Details
-                        </button>
-                        <button onclick="platform.editPost(${post.id})" 
-                                class="text-green-500 hover:text-green-400 transition-colors">
-                            Edit
-                        </button>
-                        <button onclick="platform.deletePost(${post.id})" 
-                                class="text-red-500 hover:text-red-400 transition-colors">
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            container.appendChild(div);
-        });
-    }
-
-    handleSearch(query) {
-        this.filterAndRender(query, document.getElementById('category-filter').value);
-    }
-
-    handleCategoryFilter(category) {
-        this.filterAndRender(document.getElementById('search-input').value, category);
-    }
-
-    filterAndRender(query, categoryFilter) {
-        let filteredPosts = this.posts;
-
-        // Apply category filter
-        if (categoryFilter) {
-            filteredPosts = filteredPosts.filter(post => post.category === categoryFilter);
-        }
-        
-        // Apply search query
-        if (query) {
-            const lowerQuery = query.toLowerCase();
-            filteredPosts = filteredPosts.filter(post => 
-                post.title.toLowerCase().includes(lowerQuery) ||
-                post.content.toLowerCase().includes(lowerQuery) ||
-                (post.tags && post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)))
-            );
-        }
-
-        this.renderPosts(filteredPosts);
-    }
-
-    clearFilters() {
-        const searchInput = document.getElementById('search-input');
-        const categoryFilter = document.getElementById('category-filter');
-        
-        if (searchInput) searchInput.value = '';
-        if (categoryFilter) categoryFilter.value = '';
-        
-        this.renderPosts();
-    }
-
-    // --- Modal and Form Logic ---
-    openAddModal() {
-        this.currentEditId = null;
-        const modal = document.getElementById('post-modal');
-        document.getElementById('modal-title').textContent = 'Add New Post';
-        this.clearForm();
-        modal.classList.add('active');
-        this.animateModalOpen(modal);
-    }
-
-    editPost(id) {
-        const post = this.posts.find(p => p.id === id);
-        if (!post) return;
-
-        this.currentEditId = id;
-        const modal = document.getElementById('post-modal');
-        document.getElementById('modal-title').textContent = `Edit Post: ${post.title}`;
-        this.fillForm(post);
-        modal.classList.add('active');
-        this.animateModalOpen(modal);
-    }
-
-    viewPost(id) {
-        const post = this.posts.find(p => p.id === id);
-        if (!post) return;
-
-        // Simple view modal creation (re-used logic, adjusted for dark theme)
-        const existingModal = document.querySelector('.view-post-modal');
-        if (existingModal) existingModal.remove();
-
-        const modal = document.createElement('div');
-        modal.className = 'modal fixed inset-0 bg-black bg-opacity-70 items-center justify-center z-50 active view-post-modal';
-        modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
-
-        const categoryStyles = {
-            announcements: 'bg-blue-600', guidelines: 'bg-green-600', updates: 'bg-yellow-600',
-            training: 'bg-purple-600', policies: 'bg-red-600'
-        };
-        const categoryClass = categoryStyles[post.category] || 'bg-gray-600';
-
-        modal.innerHTML = `
-            <div class="card-bg rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center sticky top-0 card-bg z-10">
-                    <h3 class="text-xl font-semibold text-white">${post.title}</h3>
-                    <button onclick="this.closest('.view-post-modal').remove()" class="text-gray-400 hover:text-gray-200 p-1">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div class="px-6 py-6">
-                    <div class="mb-4">
-                        <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full text-white ${categoryClass}">
-                            ${post.category.charAt(0).toUpperCase() + post.category.slice(1)}
-                        </span>
-                        <span class="ml-2 text-sm text-gray-500">By ${post.author} on ${this.formatDate(post.createdDate)}</span>
-                    </div>
-                    <div class="prose max-w-none">
-                        <p class="text-gray-300 leading-relaxed whitespace-pre-wrap">${post.content}</p>
-                    </div>
-                    <div class="mt-6 border-t border-gray-700 pt-4">
-                        <p class="text-sm text-gray-500">Tags: ${post.tags ? post.tags.join(', ') : 'None'}</p>
-                        <p class="text-xs text-gray-600">Last Modified: ${this.formatDate(post.modifiedDate)}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        this.animateModalOpen(modal);
-    }
-
-    closeModal() {
-        const modal = document.getElementById('post-modal');
-        this.animateModalClose(modal, () => modal.classList.remove('active'));
-    }
-
-    handleFormSubmit(e) {
-        e.preventDefault();
-        
-        const formData = {
-            title: document.getElementById('post-title').value,
-            category: document.getElementById('post-category').value,
-            content: document.getElementById('post-content').value,
-            tags: document.getElementById('post-tags').value.split(',').map(tag => tag.trim()).filter(tag => tag)
-        };
-
-        if (this.currentEditId) {
-            // Update existing post
-            const postIndex = this.posts.findIndex(p => p.id === this.currentEditId);
-            if (postIndex !== -1) {
-                this.posts[postIndex] = {
-                    ...this.posts[postIndex],
-                    ...formData,
-                    modifiedDate: new Date().toISOString().split('T')[0]
-                };
-                this.showNotification('Post updated successfully!', 'success');
+                // Ensure tags is treated as an array and content is clean
+                return data.map(post => ({
+                    ...post,
+                    tags: post.tags ? post.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+                    wordCount: this.getWordCount(post.content || '')
+                }));
             }
-        } else {
-            // Add new post
-            const newPost = {
-                id: Date.now(),
-                ...formData,
-                author: 'Manager', // Placeholder author
-                createdDate: new Date().toISOString().split('T')[0],
-                modifiedDate: new Date().toISOString().split('T')[0],
-                status: 'published'
-            };
-            this.posts.unshift(newPost);
-            this.showNotification('Post created successfully!', 'success');
-        }
 
-        this.saveDataToLocalStorage();
-        this.closeModal();
-    }
+            async createPost(data) {
+                if (!supabaseClient) return;
+                const { error } = await supabaseClient.from('posts').insert([data]);
+                if (error) {
+                    console.error('Error creating post:', error);
+                    this.showNotification(`Error creating post: ${error.message}`, 'error');
+                } else {
+                    this.showNotification('Post successfully created!', 'success');
+                    this.closeModal();
+                }
+            }
 
-    deletePost(id) {
-        const post = this.posts.find(p => p.id === id);
-        if (!post) return;
+            async updatePost(id, data) {
+                if (!supabaseClient) return;
+                const { error } = await supabaseClient.from('posts').update(data).eq('id', id);
+                if (error) {
+                    console.error('Error updating post:', error);
+                    this.showNotification(`Error updating post: ${error.message}`, 'error');
+                } else {
+                    this.showNotification('Post successfully updated!', 'success');
+                    this.closeModal();
+                }
+            }
 
-        if (confirm(`Are you sure you want to delete "${post.title}"? This action cannot be undone.`)) { 
-            this.posts = this.posts.filter(p => p.id !== id);
-            this.saveDataToLocalStorage();
-            this.showNotification('Post deleted permanently!', 'success');
-        }
-    }
+            async deletePost(id) {
+                if (!supabaseClient) return;
+                if (!confirm("Are you sure you want to delete this post?")) return;
 
-    // --- Utility Methods ---
-    fillForm(post) {
-        document.getElementById('post-title').value = post.title;
-        document.getElementById('post-category').value = post.category;
-        document.getElementById('post-content').value = post.content;
-        document.getElementById('post-tags').value = post.tags ? post.tags.join(', ') : '';
-    }
+                const { error } = await supabaseClient.from('posts').delete().eq('id', id);
+                if (error) {
+                    console.error('Error deleting post:', error);
+                    this.showNotification(`Error deleting post: ${error.message}`, 'error');
+                } else {
+                    this.showNotification('Post successfully deleted.', 'info');
+                }
+            }
 
-    clearForm() {
-        document.getElementById('post-title').value = '';
-        document.getElementById('post-category').value = 'announcements';
-        document.getElementById('post-content').value = '';
-        document.getElementById('post-tags').value = '';
-    }
+            listenForRealtimeUpdates() {
+                if (!supabaseClient) return;
+                supabaseClient
+                    .channel('schema-db-changes')
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'posts' },
+                        (payload) => {
+                            console.log('Realtime change received!', payload);
+                            // Re-fetch and re-render the whole list for simplicity
+                            this.renderPosts();
+                            if (payload.eventType === 'INSERT') {
+                                this.showNotification("New post added by collaborator!", 'info');
+                            }
+                        }
+                    )
+                    .subscribe();
+            }
 
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-    }
+            // --- UI/Rendering Logic ---
 
-    setupEventListeners() {
-        document.getElementById('post-form').addEventListener('submit', (e) => this.handleFormSubmit(e));
-    }
+            async renderPosts() {
+                document.getElementById('loading-message').style.display = 'block';
+                const postsListEl = document.getElementById('posts-list');
+                const searchInput = document.getElementById('search-input').value.toLowerCase();
+                const sortValue = document.getElementById('sort-select').value;
+                const noResultsEl = document.getElementById('no-results');
+                
+                this.posts = await this.fetchPosts();
 
-    // --- Animations and Effects ---
-    initializeAnimations() {
-        new Typed('#hero-title', {
-            strings: ['Private AI Chatbot', 'Your Business Command Center', 'Content Management AI'],
-            typeSpeed: 50, backSpeed: 30, backDelay: 2000, loop: true, showCursor: false
-        });
-        
-        // Initial card fade-in animation
-        anime({
-            targets: '.card-hover', translateY: [20, 0], opacity: [0, 1],
-            delay: anime.stagger(100), duration: 800, easing: 'easeOutQuart'
-        });
-    }
-    
-    // --- Chart Logic (ECharts) ---
-    calculateChartData() {
-        const categoryCounts = {};
-        this.posts.forEach(post => {
-            const category = post.category;
-            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-        });
-        const categoryChartData = Object.keys(categoryCounts).map(key => ({
-            value: categoryCounts[key], name: key.charAt(0).toUpperCase() + key.slice(1)
-        }));
-        
-        // Simulated trends data
-        const trendsData = [
-            { month: 'May', posts: 10 }, { month: 'Jun', posts: 15 }, { month: 'Jul', posts: 8 }, 
-            { month: 'Aug', posts: 12 }, { month: 'Sep', posts: 20 }, { month: 'Oct', posts: this.posts.length }
-        ];
+                // 1. Filtering
+                let filteredPosts = this.posts.filter(post => {
+                    const searchMatch = !searchInput ||
+                        post.title.toLowerCase().includes(searchInput) ||
+                        (post.content || '').toLowerCase().includes(searchInput) ||
+                        post.tags.some(tag => tag.toLowerCase().includes(searchInput));
+                    return searchMatch;
+                });
 
-        return { categoryChartData, trendsData };
-    }
+                // 2. Sorting
+                filteredPosts.sort((a, b) => {
+                    const dateA = new Date(a.created_at);
+                    const dateB = new Date(b.created_at);
+                    if (sortValue === 'date-desc') return dateB - dateA;
+                    if (sortValue === 'date-asc') return dateA - dateB;
+                    if (sortValue === 'title-asc') return a.title.localeCompare(b.title);
+                    return 0;
+                });
 
-    renderCharts() {
-        if (typeof echarts === 'undefined') return;
+                document.getElementById('loading-message').style.display = 'none';
 
-        const { categoryChartData, trendsData } = this.calculateChartData();
+                if (filteredPosts.length === 0) {
+                    postsListEl.innerHTML = '';
+                    noResultsEl.style.display = 'block';
+                } else {
+                    noResultsEl.style.display = 'none';
+                    postsListEl.innerHTML = filteredPosts.map(post => this.createPostCard(post)).join('');
+                }
 
-        // --- Category Chart (Pie Chart) ---
-        const categoryChartDom = document.getElementById('category-chart');
-        if (categoryChartDom) {
-            const categoryChart = echarts.init(categoryChartDom, 'dark'); // Use 'dark' theme for ECharts
-            const categoryOption = {
-                tooltip: { trigger: 'item' },
-                series: [{
-                    name: 'Posts', type: 'pie', radius: '70%', center: ['50%', '50%'], data: categoryChartData,
-                    label: { show: true, formatter: '{b} ({d}%)', color: '#f1f5f9' },
-                    color: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b']
-                }],
-                textStyle: { color: '#f1f5f9' }
-            };
-            categoryChart.setOption(categoryOption);
-        }
+                this.updateStats(this.posts);
+                this.updateChart(this.posts);
+                // Re-render lucide icons after injecting HTML
+                lucide.createIcons();
+            }
 
-        // --- Trends Chart (Line Chart) ---
-        const trendsChartDom = document.getElementById('trends-chart');
-        if (trendsChartDom) {
-            const trendsChart = echarts.init(trendsChartDom, 'dark'); // Use 'dark' theme for ECharts
-            const trendsOption = {
-                tooltip: { trigger: 'axis' },
-                xAxis: { 
-                    type: 'category', 
-                    data: trendsData.map(d => d.month),
-                    axisLabel: { color: '#9ca3af' }
-                },
-                yAxis: { 
-                    type: 'value', 
-                    name: 'New Posts', 
-                    nameTextStyle: { color: '#9ca3af' },
-                    axisLabel: { color: '#9ca3af' }
-                },
-                series: [{
-                    name: 'New Posts', type: 'line', smooth: true, data: trendsData.map(d => d.posts),
-                    itemStyle: { color: '#3b82f6' },
-                    areaStyle: {
-                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
-                            offset: 0, color: 'rgba(59, 130, 246, 0.5)'
-                        }, {
-                            offset: 1, color: 'rgba(59, 130, 246, 0)'
-                        }])
+            createPostCard(post) {
+                const date = this.formatDate(post.created_at);
+                const tagElements = post.tags.map(tag => `<span class="tag bg-gray-100 text-gray-700 hover:bg-gray-200" onclick="platform.filterByTag('${tag}')">${tag}</span>`).join('');
+                const snippet = (post.content || '').substring(0, 150) + (post.content.length > 150 ? '...' : '');
+
+                return `
+                    <div class="card p-6 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 border-l-4 border-blue-400">
+                        <div class="flex-grow">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">${post.title}</h3>
+                            <p class="text-gray-600 text-sm mb-3">${snippet}</p>
+                            <div class="flex flex-wrap items-center mt-2">
+                                ${tagElements}
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 flex flex-col items-start md:items-end space-y-3">
+                            <p class="text-xs text-gray-500">Created: ${date}</p>
+                            <div class="flex space-x-2">
+                                <button onclick="platform.openEditModal(${post.id})"
+                                        class="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition" title="Edit">
+                                    <i data-lucide="square-pen" class="w-5 h-5"></i>
+                                </button>
+                                <button onclick="platform.deletePost(${post.id})"
+                                        class="p-2 text-red-600 hover:bg-red-100 rounded-full transition" title="Delete">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // --- Modal and Form Logic ---
+
+            openAddModal() {
+                this.currentEditId = null;
+                document.getElementById('modal-title').textContent = 'Add New Post';
+                document.getElementById('post-form').reset();
+                document.getElementById('post-id').value = '';
+                document.getElementById('save-post-btn').textContent = 'Save Post';
+                this.showModal();
+            }
+
+            openEditModal(id) {
+                const post = this.posts.find(p => p.id === id);
+                if (!post) {
+                    this.showNotification('Post not found.', 'error');
+                    return;
+                }
+
+                this.currentEditId = id;
+                document.getElementById('modal-title').textContent = 'Edit Post';
+                document.getElementById('post-id').value = post.id;
+                document.getElementById('post-title').value = post.title;
+                document.getElementById('post-content').value = post.content;
+                document.getElementById('post-tags').value = post.tags.join(', ');
+                document.getElementById('save-post-btn').textContent = 'Update Post';
+                this.showModal();
+            }
+
+            showModal() {
+                const modal = document.getElementById('post-modal');
+                modal.classList.remove('hidden');
+                anime({
+                    targets: modal,
+                    opacity: [0, 1],
+                    duration: 200,
+                    easing: 'linear',
+                    complete: () => {
+                        anime({
+                            targets: '.modal > .card',
+                            translateY: [20, 0],
+                            scale: [0.95, 1],
+                            duration: 300,
+                            easing: 'easeOutQuad'
+                        });
                     }
-                }],
-                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                textStyle: { color: '#f1f5f9' }
-            };
-            trendsChart.setOption(trendsOption);
+                });
+            }
+
+            closeModal() {
+                const modal = document.getElementById('post-modal');
+                anime({
+                    targets: '.modal > .card',
+                    translateY: [0, 20],
+                    scale: [1, 0.95],
+                    duration: 300,
+                    easing: 'easeInQuad',
+                    complete: () => {
+                        anime({
+                            targets: modal,
+                            opacity: [1, 0],
+                            duration: 200,
+                            easing: 'linear',
+                            complete: () => modal.classList.add('hidden')
+                        });
+                    }
+                });
+            }
+
+            setupEventListeners() {
+                document.getElementById('post-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleFormSubmit();
+                });
+            }
+
+            handleFormSubmit() {
+                const id = document.getElementById('post-id').value;
+                const title = document.getElementById('post-title').value.trim();
+                const content = document.getElementById('post-content').value.trim();
+                const tagsInput = document.getElementById('post-tags').value.trim();
+
+                if (!title || !content) {
+                    this.showNotification("Title and Content are required fields.", 'error');
+                    return;
+                }
+
+                // Prepare data for Supabase (store tags as a comma-separated string)
+                const data = {
+                    title: title,
+                    content: content,
+                    tags: tagsInput,
+                    created_at: new Date().toISOString()
+                };
+
+                if (id) {
+                    this.updatePost(parseInt(id), data);
+                } else {
+                    this.createPost(data);
+                }
+            }
+
+            // --- Filter and Search Logic ---
+
+            filterPosts() {
+                // Rerender posts based on current search input and sort value
+                this.renderPosts();
+
+                const searchInput = document.getElementById('search-input').value.trim();
+                const clearBtn = document.getElementById('clear-filters-btn');
+                clearBtn.disabled = searchInput === '';
+            }
+
+            filterByTag(tag) {
+                const searchInput = document.getElementById('search-input');
+                searchInput.value = tag;
+                this.filterPosts();
+            }
+
+            clearFilters() {
+                document.getElementById('search-input').value = '';
+                document.getElementById('sort-select').value = 'date-desc';
+                this.filterPosts();
+            }
+
+            // --- Helper Functions and Utilities ---
+
+            formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return new Date(dateString).toLocaleDateString('en-US', options);
+            }
+
+            getWordCount(text) {
+                return (text || '').trim().split(/\s+/).filter(word => word.length > 0).length;
+            }
+
+            updateStats(posts) {
+                const totalPosts = posts.length;
+                let totalWords = 0;
+                let allTags = new Set();
+                let draftCount = 0; // Assuming all posts retrieved are 'published' for simplicity
+
+                posts.forEach(post => {
+                    totalWords += post.wordCount;
+                    post.tags.forEach(tag => allTags.add(tag.toLowerCase()));
+                });
+
+                const avgWords = totalPosts > 0 ? Math.round(totalWords / totalPosts) : 0;
+                const uniqueTags = allTags.size;
+
+                document.getElementById('stat-total-posts').textContent = totalPosts;
+                document.getElementById('stat-avg-words').textContent = avgWords;
+                document.getElementById('stat-unique-tags').textContent = uniqueTags;
+                document.getElementById('stat-drafts').textContent = draftCount; // Placeholder
+            }
+
+            updateChart(posts) {
+                const tagCounts = {};
+                posts.forEach(post => {
+                    post.tags.forEach(tag => {
+                        const t = tag.trim();
+                        tagCounts[t] = (tagCounts[t] || 0) + 1;
+                    });
+                });
+
+                const chartData = Object.keys(tagCounts).map(tag => ({
+                    value: tagCounts[tag],
+                    name: tag
+                })).sort((a, b) => b.value - a.value).slice(0, 10); // Top 10 tags
+
+                const chartDom = document.getElementById('tag-chart');
+                const tagChart = echarts.init(chartDom);
+
+                const option = {
+                    tooltip: { trigger: 'item' },
+                    legend: {
+                        type: 'scroll',
+                        orient: 'vertical',
+                        right: 10,
+                        top: 20,
+                        bottom: 20,
+                    },
+                    series: [
+                        {
+                            name: 'Tag Usage',
+                            type: 'pie',
+                            radius: ['40%', '70%'],
+                            center: ['40%', '50%'],
+                            avoidLabelOverlap: false,
+                            itemStyle: {
+                                borderRadius: 10,
+                                borderColor: '#fff',
+                                borderWidth: 2
+                            },
+                            label: { show: false, position: 'center' },
+                            emphasis: { label: { show: true, fontSize: 20, fontWeight: 'bold' } },
+                            labelLine: { show: false },
+                            data: chartData
+                        }
+                    ],
+                    color: ['#0d6efd', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#17a2b8', '#fd7e14', '#e83e8c', '#6c757d', '#007bff']
+                };
+
+                tagChart.setOption(option);
+            }
+
+            showNotification(message, type = 'info') {
+                const container = document.getElementById('notification-container');
+                const notification = document.createElement('div');
+
+                notification.className = `px-6 py-3 rounded-lg shadow-lg text-white transform translate-x-full transition-all duration-300 ${
+                    type === 'success' ? 'bg-green-500' :
+                    type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                }`;
+                notification.textContent = message;
+
+                container.appendChild(notification);
+
+                // Animate notification in
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-full');
+                    notification.classList.add('translate-x-0');
+                }, 10);
+
+                // Remove notification after 4 seconds
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-0');
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => notification.remove(), 300); // Wait for transition out
+                }, 4000);
+            }
+
+            logout() {
+                // In a full Supabase app, this would handle session termination.
+                // For this example, we'll keep the dashboard visible but log a message.
+                this.showNotification('Logged out simulated.', 'info');
+            }
         }
-    }
 
-    // --- Notification and Modal Animation ---
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-xl text-white ${
-            type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'
-        }`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        anime({ targets: notification, translateX: [100, 0], opacity: [0, 1], duration: 300, easing: 'easeOutQuart' });
-        
-        setTimeout(() => {
-            anime({ targets: notification, translateX: [0, 100], opacity: [1, 0], duration: 300, easing: 'easeInQuart', complete: () => notification.remove() });
-        }, 3000);
-    }
+        // Global functions for HTML onclick handlers
+        function openAddModal() { platform.openAddModal(); }
+        function closeModal() { platform.closeModal(); }
+        function clearFilters() { platform.clearFilters(); }
 
-    animateModalOpen(modal) {
-        anime({
-            targets: modal.querySelector('div:not(.modal)'),
-            scale: [0.8, 1],
-            opacity: [0, 1],
-            duration: 300,
-            easing: 'easeOutQuart'
+        // Initialize platform when DOM is loaded
+        let platform;
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if icons are ready before initialization
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            platform = new BSSPlusPlatform();
         });
-    }
-
-    animateModalClose(modal, callback) {
-        anime({
-            targets: modal.querySelector('div:not(.modal)'),
-            scale: [1, 0.8],
-            opacity: [1, 0],
-            duration: 200,
-            easing: 'easeInQuart',
-            complete: callback
-        });
-    }
-}
-
-// Global functions for HTML onclick handlers
-function openAddModal() { window.platform.openAddModal(); }
-function clearFilters() { window.platform.clearFilters(); }
-
-// Initialize platform when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if echarts is available before initializing the platform
-    if (typeof echarts === 'undefined') {
-        console.error("ECharts library not loaded. Charts will not render.");
-    }
-    window.platform = new BSSPlusPlatform();
-});
     </script>
-
 </body>
 </html>
 
