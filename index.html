@@ -25,14 +25,12 @@
         .btn-success { background: #10B981; }
         .btn-success:hover { background: #059669; }
         #particles-canvas { position: absolute; top: 0; left: 0; z-index: -1; }
-        .modal { display: none; }
-        .modal.active { display: flex; }
+        /* FIX: Removed custom .modal CSS to allow Tailwind's 'hidden' class to work via JavaScript. */
         .fade-in { opacity: 0; transform: translateY(20px); }
         .fade-in.visible { opacity: 1; transform: translateY(0); transition: all 0.6s ease; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
-    <!-- Navigation -->
     <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
@@ -54,7 +52,6 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <section class="hero-bg relative overflow-hidden py-16">
         <canvas id="particles-canvas"></canvas>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -78,9 +75,7 @@
         </div>
     </section>
 
-    <!-- Dashboard Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 fade-in">
             <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
                 <div class="flex items-center justify-between">
@@ -95,129 +90,119 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">This Week</p>
-                        <p class="text-2xl font-bold text-gray-900">3</p>
-                    </div>
-                    <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">API Calls</p>
-                        <p class="text-2xl font-bold text-gray-900" id="api-calls-metric">0</p>
-                        <p class="text-sm text-gray-600 mt-1">Available for integration</p>
-                    </div>
-                    <div class="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            
             <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Categories</p>
-                        <p class="text-2xl font-bold text-gray-900">5</p>
+                        <p class="text-2xl font-bold text-gray-900" id="total-categories">5</p>
                     </div>
-                    <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                        <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                    <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Published</p>
+                        <p class="text-2xl font-bold text-gray-900" id="published-posts">10</p>
+                    </div>
+                    <div class="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Drafts</p>
+                        <p class="text-2xl font-bold text-gray-900" id="draft-posts">2</p>
+                    </div>
+                    <div class="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Search and Filter -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 fade-in">
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <div class="relative">
-                        <input type="text" id="search-input" placeholder="Search posts..." 
-                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <svg class="absolute left-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <select id="category-filter" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="">All Categories</option>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 fade-in">
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 card-hover">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Post Distribution by Category</h2>
+                <div id="chart-pie" class="h-80"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Content Trends (Last 6 Months)</h2>
+                <div id="chart-line" class="h-80"></div>
+            </div>
+        </div>
+
+        <section class="fade-in">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">Content Management</h2>
+            
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <input type="text" id="search-input" placeholder="Search posts by title or content..."
+                           class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    
+                    <select id="category-filter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="all">Filter by Category</option>
                         <option value="announcements">Announcements</option>
                         <option value="guidelines">Guidelines</option>
                         <option value="updates">Updates</option>
                         <option value="training">Training</option>
                         <option value="policies">Policies</option>
                     </select>
-                    <button onclick="clearFilters()" class="px-4 py-3 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                        Clear
+                    
+                    <button onclick="clearFilters()" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Clear Filters
                     </button>
                 </div>
+                
+                <div id="posts-list" class="space-y-4">
+                    </div>
+                
+                <div id="empty-state" class="hidden text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No posts found</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Adjust your search or click the button above to add a new post.
+                    </p>
+                </div>
             </div>
-        </div>
-
-        <!-- Posts Table -->
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden fade-in">
-            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-gray-900">Recent Posts</h2>
-                <button onclick="openAddModal()" class="btn-success text-white px-4 py-2 rounded-lg font-medium hover:scale-105 transition-transform">
-                    + Add Post
-                </button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="posts-table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Posts will be populated by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        </section>
     </main>
 
-    <!-- Add/Edit Post Modal -->
-    <div id="post-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 id="modal-title" class="text-xl font-semibold text-gray-900">Add New Post</h3>
+    <div id="post-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl p-8 transform transition-all scale-100 opacity-100"
+             onclick="event.stopPropagation()"> <div class="flex justify-between items-start mb-6">
+                <h3 id="modal-title" class="text-2xl font-semibold text-gray-900">Add New Post</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <form id="post-form" class="px-6 py-4 space-y-4">
+            
+            <form id="post-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                    <input type="text" id="post-title" required 
+                    <label for="post-title" class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <input type="text" id="post-title" required
+                           placeholder="Enter post title"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                    <select id="post-category" required 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="">Select Category</option>
+                    <label for="post-category" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select id="post-category" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Select a category</option>
                         <option value="announcements">Announcements</option>
                         <option value="guidelines">Guidelines</option>
                         <option value="updates">Updates</option>
@@ -226,8 +211,9 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                    <label for="post-content" class="block text-sm font-medium text-gray-700 mb-2">Content</label>
                     <textarea id="post-content" rows="6" required
+                              placeholder="Write your post content here..."
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                 </div>
                 <div>
@@ -250,7 +236,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center">
