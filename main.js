@@ -1,21 +1,22 @@
-// BSSPlus Platform Main JavaScript - API-Driven with Netlify/Supabase
-class BSSPlusPlatform {
+// AIChatbotPlatform Main JavaScript - API-Driven with Netlify/Supabase
+class AIChatbotPlatform {
     constructor() {
-        this.posts = [];
+        this.interactions = []; // <-- Renamed data store
         this.currentEditId = null;
-        // The endpoint is now handled by the Netlify Redirects file
+        // The endpoint is now pointing to the new consolidated API path
         this.apiEndpoints = {
-            posts: '/api/posts', 
+            // Key remains 'posts' for convenient internal access, but the URL is now correct
+            posts: '/api/interactions', 
         };
         this.init();
     }
 
     async init() {
         this.checkAuthentication();
-        await this.loadPosts(); // <--- ASYNCHRONOUSLY LOADS FROM API
+        await this.loadInteractions(); // <-- Renamed function call
         this.setupEventListeners();
         this.initializeAnimations();
-        this.renderPosts();
+        this.renderInteractions(); // <-- Renamed function call
         this.initParticles();
         this.initializeAPI();
     }
@@ -24,403 +25,430 @@ class BSSPlusPlatform {
     // API-DRIVEN CRUD METHODS (Supabase via Netlify Function)
     // ------------------------------------------------------------------
 
-    // R - Read All Posts (Load data from API)
-    async loadPosts() {
-        this.showNotification("Loading posts from BSSPlus API...", 'info');
+    // R - Read All Interactions (Load data from API)
+    async loadInteractions() { // <-- Renamed function
+        this.showNotification("Loading chat interactions...", 'info');
         try {
             const response = await fetch(this.apiEndpoints.posts);
-            
+
             if (!response.ok) {
                 // If the response status is not 200, throw an error
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                // Sort posts by created_date, descending
-                this.posts = result.data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-                this.renderPosts();
-                this.showNotification(`Successfully loaded ${this.posts.length} posts from database.`, 'success');
-                // Ensure local storage is cleared, as it's no longer the source of truth
-                localStorage.removeItem('bssplus_posts');
-            } else {
-                console.error("API Error:", result.error);
-                this.showNotification("Could not load posts from API.", 'error');
-                this.loadSampleDataFallback(); 
-            }
 
+            const result = await response.json();
+
+            if (result.success) {
+                // Sort interactions by created_date, descending
+                this.interactions = result.data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+
+                this.renderInteractions(); // <-- Renamed function call
+                this.updateStats();
+                this.updateTopicChart();
+                this.showNotification(`Successfully loaded ${this.interactions.length} interactions.`, 'success');
+            } else {
+                throw new Error(result.error || "Failed to load interactions data.");
+            }
         } catch (error) {
-            console.error("Fetch Error:", error);
-            this.showNotification(`Failed to connect to the content API. Loading fallback data.`, 'error');
-            this.loadSampleDataFallback();
+            console.error("Error loading interactions:", error);
+            this.showNotification("Error connecting to API. Check console.", 'error');
         }
     }
     
-    // C - Create Post (POST request)
-    async createPost(data) {
-        const postData = {
-            ...data,
-            author: localStorage.getItem('bssplus_username') || 'Manager',
+    // R - Read Single Interaction
+    getInteractionById(id) {
+        return this.interactions.find(i => i.id == id); // <-- Uses this.interactions
+    }
+
+    // C/U - Create or Update Interaction
+    async saveInteraction(event) { // <-- Renamed function
+        event.preventDefault();
+
+        const id = document.getElementById('post-id').value;
+        const isNew = !id;
+        const method = isNew ? 'POST' : 'PUT';
+        let url = this.apiEndpoints.posts;
+
+        const interactionData = {
+            title: document.getElementById('post-title').value,
+            content: document.getElementById('post-body').value,
+            tags: document.getElementById('post-tags').value,
+            // Assuming the server handles validation and dates
         };
         
+        if (!isNew) {
+            url = `${url}/${id}`;
+            interactionData.id = id;
+        }
+
+        this.showNotification(`${isNew ? 'Saving' : 'Updating'} interaction...`, 'info');
+        
         try {
-            const response = await fetch(this.apiEndpoints.posts, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(postData),
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(interactionData),
             });
 
             const result = await response.json();
 
-            if (!response.ok || !result.success) {
-                throw new Error(result.error || `HTTP error! status: ${response.status}`);
+            if (result.success) {
+                this.showNotification(`Interaction ${isNew ? 'created' : 'updated'} successfully!`, 'success');
+                this.closeModal();
+                await this.loadInteractions(); // <-- Renamed function call
+            } else {
+                throw new Error(result.error || `Failed to ${isNew ? 'create' : 'update'} interaction.`);
             }
 
-            // Reload all posts to update the list with the new, confirmed data from the database
-            await this.loadPosts(); 
-            this.showNotification('Post created successfully and saved to database.', 'success');
-            return { success: true, data: result.data };
-            
         } catch (error) {
-            console.error("Create Post Error:", error);
-            this.showNotification(`Failed to create post: ${error.message}`, 'error');
-            return { success: false, error: error.message };
+            console.error("Error saving interaction:", error);
+            this.showNotification(`Error: ${error.message}`, 'error');
         }
     }
 
-    // U - Update Post (PUT request)
-    async updatePost(id, data) {
-        // The PUT endpoint requires the ID in the URL: /api/posts/123
-        const endpoint = `${this.apiEndpoints.posts}/${id}`; 
+    // D - Delete Interaction
+    async deleteInteraction() { // <-- Renamed function
+        this.showNotification("Deleting interaction...", 'info');
+        // ID is retrieved from the button data attribute set by confirmDeleteInteraction()
+        const id = document.getElementById('confirm-delete-button').dataset.id;
         
         try {
-            const response = await fetch(endpoint, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok || !result.success) {
-                throw new Error(result.error || `HTTP error! status: ${response.status}`);
-            }
-            
-            // Reload all posts to ensure the list is refreshed
-            await this.loadPosts(); 
-            this.showNotification('Post updated successfully in database.', 'success');
-            return { success: true, data: result.data };
-            
-        } catch (error) {
-            console.error("Update Post Error:", error);
-            this.showNotification(`Failed to update post: ${error.message}`, 'error');
-            return { success: false, error: error.message };
-        }
-    }
-
-    // D - Delete Post (DELETE request)
-    async deletePost(id) {
-        // The DELETE endpoint requires the ID in the URL: /api/posts/123
-        const endpoint = `${this.apiEndpoints.posts}/${id}`; 
-        
-        try {
-            const response = await fetch(endpoint, {
+            const response = await fetch(`${this.apiEndpoints.posts}/${id}`, {
                 method: 'DELETE',
             });
-
+            
             const result = await response.json();
 
-            if (!response.ok || !result.success) {
-                throw new Error(result.error || `HTTP error! status: ${response.status}`);
+            if (result.success) {
+                this.showNotification("Interaction deleted successfully.", 'success');
+                this.closeModal();
+                await this.loadInteractions(); // <-- Renamed function call
+            } else {
+                throw new Error(result.error || "Failed to delete interaction.");
             }
-            
-            // For a fast UI update, remove from local array before full reload
-            this.posts = this.posts.filter(p => p.id != id); 
-            this.renderPosts(); 
-            this.showNotification('Post deleted successfully from database.', 'success');
-            return { success: true, message: 'Post deleted successfully' };
-            
+
         } catch (error) {
-            console.error("Delete Post Error:", error);
-            this.showNotification(`Failed to delete post: ${error.message}`, 'error');
-            return { success: false, error: error.message };
+            console.error("Error deleting interaction:", error);
+            this.showNotification(`Error: ${error.message}`, 'error');
         }
     }
-    
-    // Make form submit handler async to await the API call
-    async handleFormSubmit(e) {
-        e.preventDefault();
-        
-        // Collect form data
-        const title = document.getElementById('post-title').value;
-        const category = document.getElementById('post-category').value;
-        const content = document.getElementById('post-content').value;
-        const tagsInput = document.getElementById('post-tags').value;
-        const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()) : [];
-        
-        const postData = { title, category, content, tags, status: 'published' };
 
-        // Determine if creating or updating
-        if (this.currentEditId) {
-            await this.updatePost(this.currentEditId, postData);
-        } else {
-            await this.createPost(postData);
-        }
-
-        this.closeModal();
-    }
-    
     // ------------------------------------------------------------------
-    // AUTHENTICATION AND LEGACY/FALLBACK METHODS (Mostly Unchanged)
+    // UI METHODS
     // ------------------------------------------------------------------
 
-    checkAuthentication() {
-        // Check if user is logged in
-        if (!localStorage.getItem('bssplus_logged_in') || 
-            localStorage.getItem('bssplus_username') !== 'admin') {
-            window.location.href = 'login.html';
+    // Render the table rows
+    renderInteractions() { // <-- Renamed function
+        const tableBody = document.getElementById('posts-table-body'); // Retaining HTML ID for now
+        if (!tableBody) return; 
+
+        tableBody.innerHTML = ''; // Clear existing rows
+        
+        const filteredInteractions = this.interactions
+            .filter(interaction => this.filterLogic(interaction))
+            .filter(interaction => this.searchLogic(interaction));
+
+        if (filteredInteractions.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-gray-500 text-lg">No interactions found matching your criteria.</td></tr>`;
             return;
         }
+
+        filteredInteractions.forEach(interaction => {
+            const row = `
+                <tr class="hover:bg-gray-700/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">${interaction.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 hidden sm:table-cell">${interaction.author || 'Admin'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 hidden md:table-cell">
+                        ${interaction.tags ? interaction.tags.split(',').map(tag => `<span class="inline-block bg-gray-600/50 text-xs font-semibold px-2 py-0.5 rounded-full mr-1">${tag.trim()}</span>`).join('') : '<span class="text-gray-500">N/A</span>'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 hidden lg:table-cell">${new Date(interaction.created_date).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <!-- Actions use globally exposed functions -->
+                        <button
+                            onclick="viewInteraction(${interaction.id})" 
+                            class="text-indigo-400 hover:text-indigo-300 transition-colors p-1"
+                            title="View Interaction">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </button>
+                        <button
+                            onclick="editInteraction(${interaction.id})" 
+                            class="text-yellow-400 hover:text-yellow-300 transition-colors p-1"
+                            title="Edit Interaction">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-12.293a1 1 0 00-1.414 0L4 12v3h3l7.707-7.707a1 1 0 000-1.414z"></path></svg>
+                        </button>
+                        <button
+                            onclick="confirmDeleteInteraction(${interaction.id})" 
+                            class="text-red-400 hover:text-red-300 transition-colors p-1"
+                            title="Delete Interaction">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
     }
 
+    // Populate modal for editing an existing post
+    editInteraction(id) { // <-- Renamed function
+        this.currentEditId = id;
+        const modal = document.getElementById('add-edit-modal');
+        const interaction = this.getInteractionById(id);
+        
+        if (interaction) {
+            document.getElementById('modal-title').textContent = 'Edit Chat Interaction';
+            document.getElementById('post-id').value = interaction.id;
+            document.getElementById('post-title').value = interaction.title;
+            document.getElementById('post-body').value = interaction.content;
+            document.getElementById('post-tags').value = interaction.tags; 
+            modal.classList.remove('hidden');
+            this.animateModalOpen(modal);
+        }
+    }
+
+    // Populate modal for viewing an existing post
+    viewInteraction(id) { // <-- Renamed function
+        const modal = document.getElementById('view-post-modal');
+        const interaction = this.getInteractionById(id);
+
+        if (interaction) {
+            document.getElementById('view-post-title').textContent = interaction.title;
+            document.getElementById('view-post-body').innerHTML = this.formatInteractionBody(interaction.content);
+            document.getElementById('view-post-date').textContent = `Date: ${new Date(interaction.created_date).toLocaleDateString()}`;
+            document.getElementById('view-post-author').textContent = `User: ${interaction.author || 'Admin'}`;
+
+            const tagsContainer = document.getElementById('view-post-tags');
+            tagsContainer.innerHTML = ''; // Clear previous tags
+            if (interaction.tags) {
+                const tags = interaction.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+                tags.forEach(tag => {
+                    tagsContainer.innerHTML += `<span class="inline-block bg-indigo-900/50 text-indigo-300 text-xs font-semibold mr-2 px-3 py-1 rounded-full">${tag}</span>`;
+                });
+            } else {
+                 tagsContainer.innerHTML = '<span class="text-gray-500 text-sm">No topics specified.</span>';
+            }
+
+            modal.classList.remove('hidden');
+            this.animateModalOpen(modal);
+        }
+    }
+    
+    // Setup delete confirmation modal
+    confirmDeleteInteraction(id) { // <-- Renamed function
+        const modal = document.getElementById('delete-confirm-modal');
+        document.getElementById('confirm-delete-button').dataset.id = id;
+        modal.classList.remove('hidden');
+        this.animateModalOpen(modal);
+    }
+    
+    // ------------------------------------------------------------------
+    // FILTERING, SEARCH, AND STATS METHODS
+    // ------------------------------------------------------------------
+
+    // Filter logic based on the dropdown filter
+    filterLogic(interaction) {
+        const filter = document.getElementById('filter-select')?.value;
+        if (!filter || filter === 'all') return true;
+        
+        const tags = interaction.tags ? interaction.tags.split(',').map(t => t.trim().toLowerCase()) : [];
+        return tags.includes(filter.toLowerCase());
+    }
+
+    // Search logic based on the search input
+    searchLogic(interaction) {
+        const searchTerm = document.getElementById('search-input')?.value.toLowerCase();
+        if (!searchTerm) return true;
+
+        const titleMatch = interaction.title.toLowerCase().includes(searchTerm);
+        const contentMatch = interaction.content.toLowerCase().includes(searchTerm);
+        const tagsMatch = interaction.tags ? interaction.tags.toLowerCase().includes(searchTerm) : false;
+
+        return titleMatch || contentMatch || tagsMatch;
+    }
+
+    // Update the statistics cards
+    updateStats() {
+        const totalInteractions = this.interactions.length;
+        const totalTags = new Set(this.interactions.flatMap(i => i.tags ? i.tags.split(',').map(t => t.trim().toLowerCase()) : [])).size;
+        
+        // Mock data for user count (since we don't have a user API)
+        const activeUsers = 5; 
+        
+        // Calculate average length (word count) - highly simplified
+        const totalWords = this.interactions.reduce((sum, i) => sum + (i.content ? i.content.split(/\s+/).length : 0), 0);
+        const averageLength = totalInteractions > 0 ? Math.round(totalWords / totalInteractions) : 0;
+
+
+        document.getElementById('stat-total-posts').textContent = totalInteractions;
+        document.getElementById('stat-total-tags').textContent = totalTags;
+        document.getElementById('stat-active-users').textContent = activeUsers;
+        document.getElementById('stat-avg-length').textContent = `${averageLength} words`;
+    }
+    
+    // Update the topic distribution chart using ECharts
+    updateTopicChart() {
+        const chartDom = document.getElementById('topic-chart');
+        if (!chartDom) return;
+
+        const tagCounts = this.interactions.reduce((acc, interaction) => {
+            if (interaction.tags) {
+                interaction.tags.split(',').map(tag => tag.trim()).forEach(tag => {
+                    const cleanTag = tag.toLowerCase();
+                    acc[cleanTag] = (acc[cleanTag] || 0) + 1;
+                });
+            }
+            return acc;
+        }, {});
+
+        // Prepare data for ECharts (Top 5 tags)
+        const sortedTags = Object.entries(tagCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5);
+        
+        const chartData = sortedTags.map(([name, value]) => ({ name, value }));
+        const chartNames = sortedTags.map(([name]) => name);
+
+        const myChart = echarts.init(chartDom, 'dark'); // Use 'dark' theme if available, otherwise default
+
+        const option = {
+            tooltip: { trigger: 'item' },
+            legend: {
+                type: 'scroll',
+                orient: 'vertical',
+                right: 0,
+                top: 20,
+                bottom: 20,
+                data: chartNames,
+                textStyle: { color: '#94a3b8' }
+            },
+            series: [
+                {
+                    name: 'Interactions by Topic',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['35%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#0f1117',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 16,
+                            fontWeight: 'bold',
+                            color: '#f1f5f9'
+                        }
+                    },
+                    labelLine: { show: false },
+                    data: chartData,
+                    color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] // Custom color palette
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+
+        // Responsive chart handling
+        window.addEventListener('resize', () => myChart.resize());
+    }
+
+    // ------------------------------------------------------------------
+    // UTILITY & SETUP METHODS
+    // ------------------------------------------------------------------
+    
+    // Mock user authentication check
+    checkAuthentication() {
+        if (localStorage.getItem('bssplus_logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    }
+
+    // Logout function
     logout() {
         localStorage.removeItem('bssplus_logged_in');
         localStorage.removeItem('bssplus_username');
         window.location.href = 'login.html';
     }
 
-    // The API methods are now internal and call the fetch methods
-    initializeAPI() {
-        window.BSSPlusAPI = {
-            getAllPosts: () => this.posts, // Now returns the locally synced array
-            getPost: (id) => this.posts.find(p => p.id == id),
-            // The following now trigger the full database update cycle:
-            createPost: (data) => this.createPost(data),
-            updatePost: (id, data) => this.updatePost(id, data),
-            deletePost: (id) => this.deletePost(id),
-        };
-    }
-    
-    // Fallback data in case the API call completely fails
-    loadSampleDataFallback() {
-        this.posts = [
-            { id: 1, title: "Welcome to BSSPlus Platform", category: "announcements", content: "Welcome to our new content management platform...", author: "System Administrator", created_date: "2024-10-15", modified_date: "2024-10-15", tags: ["welcome"], status: "published" },
-            { id: 2, title: "Digital Transformation Strategy Guidelines", category: "guidelines", content: "Comprehensive guide to implementing digital transformation...", author: "Digital Strategy Team", created_date: "2024-10-10", modified_date: "2024-10-12", tags: ["strategy"], status: "published" },
-            { id: 3, title: "ESPA Programs Update 2024", category: "updates", content: "Latest updates on ESPA (European Structural and Investment Funds) programs...", author: "Funding Advisory Team", created_date: "2024-10-08", modified_date: "2024-10-08", tags: ["funding"], status: "published" },
-        ];
-        this.renderPosts();
-    }
-    
-    // --- UI/RENDERING METHODS ---
-    
-    renderPosts(postsToRender = this.posts) {
-        const tableBody = document.getElementById('posts-table-body');
-        if (!tableBody) return;
-        
-        tableBody.innerHTML = '';
-        
-        if (postsToRender.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No posts found. Add a new post to get started!</td></tr>`;
-            return;
-        }
-
-        const categoryColors = {
-            announcements: 'bg-blue-100 text-blue-800',
-            guidelines: 'bg-green-100 text-green-800',
-            updates: 'bg-yellow-100 text-yellow-800',
-            training: 'bg-purple-100 text-purple-800',
-            policies: 'bg-red-100 text-red-800'
-        };
-
-        postsToRender.forEach(post => {
-            const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50 transition-colors';
-            
-            // NOTE: Using post.created_date and post.modified_date from the Supabase schema
-            row.innerHTML = `
-                <td class="px-6 py-4">
-                    <div class="text-sm font-medium text-gray-900">${post.title}</div>
-                    <div class="text-sm text-gray-500">${post.content.substring(0, 80)}...</div>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${categoryColors[post.category] || 'bg-gray-100 text-gray-800'}">
-                        ${post.category}
-                    </span>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">${post.author || 'N/A'}</td>
-                <td class="px-6 py-4 text-sm text-gray-500">${this.formatDate(post.created_date)}</td>
-                <td class="px-6 py-4">
-                    <div class="flex items-center space-x-2">
-                        <button onclick="platform.editPost(${post.id})" 
-                                class="text-blue-600 hover:text-blue-900 text-sm font-medium">
-                            Edit
-                        </button>
-                        <button onclick="platform.viewPost(${post.id})" 
-                                class="text-green-600 hover:text-green-900 text-sm font-medium">
-                            View
-                        </button>
-                        <button onclick="platform.confirmDelete(${post.id})" 
-                                class="text-red-600 hover:text-red-900 text-sm font-medium">
-                            Delete
-                        </button>
-                    </div>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
-        
-        // Update total posts count
-        const totalPostsElement = document.getElementById('total-posts');
-        if (totalPostsElement) {
-            totalPostsElement.textContent = postsToRender.length;
-        }
-    }
-
+    // Setup event listeners for search and filter
     setupEventListeners() {
-        // Main event listener for form submission (Create/Update)
-        document.getElementById('post-form')?.addEventListener('submit', this.handleFormSubmit.bind(this));
-        
-        // Search and filter listeners
-        document.getElementById('search-input')?.addEventListener('input', this.applyFilters.bind(this));
-        document.getElementById('category-filter')?.addEventListener('change', this.applyFilters.bind(this));
-
-        // Logout listener
-        document.getElementById('logout-btn')?.addEventListener('click', this.logout.bind(this));
-        
-        // Modal close listener
-        document.getElementById('post-modal')?.addEventListener('click', (e) => {
-            if (e.target.id === 'post-modal') {
-                this.closeModal();
-            }
-        });
+        document.getElementById('search-input')?.addEventListener('input', () => this.renderInteractions());
+        document.getElementById('filter-select')?.addEventListener('change', () => this.renderInteractions());
+        document.getElementById('post-form')?.addEventListener('submit', (e) => this.saveInteraction(e)); // <-- Renamed function call
+        document.getElementById('confirm-delete-button')?.addEventListener('click', () => this.deleteInteraction()); // <-- Renamed function call
     }
     
-    applyFilters() {
-        const query = document.getElementById('search-input').value.toLowerCase();
-        const category = document.getElementById('category-filter').value;
-        
-        const filteredPosts = this.posts.filter(post => {
-            // Note: Must use post.content and post.tags as the local array is the source
-            const matchesQuery = post.title.toLowerCase().includes(query) || 
-                                 post.content.toLowerCase().includes(query) ||
-                                 (Array.isArray(post.tags) ? post.tags.some(tag => tag.toLowerCase().includes(query)) : false);
-            const matchesCategory = category === '' || post.category === category;
-            
-            return matchesQuery && matchesCategory;
-        });
-
-        this.renderPosts(filteredPosts);
-    }
-
+    // Resets search and filter and re-renders
     clearFilters() {
         document.getElementById('search-input').value = '';
-        document.getElementById('category-filter').value = '';
-        this.renderPosts(); // Render the full, unfiltered list
+        document.getElementById('filter-select').value = 'all';
+        this.renderInteractions();
+    }
+
+    // Simple markdown-like formatting for content viewing
+    formatInteractionBody(content) {
+        if (!content) return '';
+        // Convert newlines to paragraphs/breaks
+        let html = content.split('\n').map(line => `<p class="mb-3">${line.trim()}</p>`).join('');
+        // Simple bolding
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        return html;
+    }
+
+    // Initialize mock Firebase/Supabase connection (placeholder)
+    initializeAPI() {
+        console.log("Supabase/Firebase Client initialized (Mock). Using Netlify Functions for CRUD.");
     }
     
-    openAddModal() {
+    // Closes any open modal
+    closeModal() {
+        const modals = document.querySelectorAll('.modal-container:not(.hidden)');
+        modals.forEach(modal => {
+             this.animateModalClose(modal, () => modal.classList.add('hidden'));
+        });
         this.currentEditId = null;
-        const modal = document.getElementById('post-modal');
-        const modalTitle = document.getElementById('modal-title');
-        
-        if (modal && modalTitle) {
-            modalTitle.textContent = 'Add New Post';
-            this.clearForm();
-            modal.classList.add('active');
-            
-            // Animate modal appearance
-            anime({
-                targets: modal.querySelector('div:nth-child(1)'), // Target the modal content box
-                scale: [0.8, 1],
-                opacity: [0, 1],
-                duration: 300,
-                easing: 'easeOutQuart'
-            });
-        }
     }
 
-    editPost(id) {
-        const post = this.posts.find(p => p.id == id);
-        if (!post) {
-            this.showNotification('Post not found!', 'error');
-            return;
-        }
+    // ------------------------------------------------------------------
+    // ANIMATION & UI FEEDBACK
+    // ------------------------------------------------------------------
 
-        this.currentEditId = id;
-        const modal = document.getElementById('post-modal');
-        const modalTitle = document.getElementById('modal-title');
+    showNotification(message, type) {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+
+        const colorClasses = {
+            'success': 'bg-green-600 border-green-700',
+            'error': 'bg-red-600 border-red-700',
+            'info': 'bg-blue-600 border-blue-700',
+        };
         
-        if (modal && modalTitle) {
-            modalTitle.textContent = `Edit Post: ${post.title}`;
-            this.fillForm(post);
-            modal.classList.add('active');
-            
-            // Animate modal appearance
-            anime({
-                targets: modal.querySelector('div:nth-child(1)'), // Target the modal content box
-                scale: [0.8, 1],
-                opacity: [0, 1],
-                duration: 300,
-                easing: 'easeOutQuart'
-            });
-        }
-    }
-    
-    viewPost(id) {
-        const post = this.posts.find(p => p.id === id);
-        if (!post) return;
-
-        // Create a simple modal to view the full post
-        const modal = document.createElement('div');
-        modal.id = 'view-post-modal';
-        modal.className = 'modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 active';
-        modal.innerHTML = `
-            <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 class="text-xl font-semibold text-gray-900">${post.title}</h3>
-                    <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div class="px-6 py-6">
-                    <div class="mb-4">
-                        <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
-                            ${post.category}
-                        </span>
-                        <span class="ml-2 text-sm text-gray-500">By ${post.author || 'N/A'} on ${this.formatDate(post.created_date)}</span>
-                    </div>
-                    <div class="prose max-w-none">
-                        <p class="text-gray-700 leading-relaxed">${post.content}</p>
-                    </div>
-                    ${post.tags.length > 0 ? `
-                        <div class="mt-6">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Tags:</h4>
-                            <div class="flex flex-wrap gap-2">
-                                ${Array.isArray(post.tags) ? post.tags.map(tag => `
-                                    <span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">${tag}</span>
-                                `).join('') : ''}
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
+        const notification = document.createElement('div');
+        notification.className = `p-4 rounded-lg shadow-xl text-white text-sm border-l-4 ${colorClasses[type]} opacity-0 transform translate-x-full transition-all duration-300 ease-out flex items-center space-x-3`;
+        notification.innerHTML = `
+            <span>${message}</span>
         `;
         
-        document.body.appendChild(modal);
+        container.appendChild(notification);
         
-        // Add close listener for outside click
-        modal.addEventListener('click', (e) => {
-            if (e.target.id === 'view-post-modal') {
-                modal.remove();
-            }
-        });
+        anime({ targets: notification, translateX: 0, opacity: 1, duration: 300, easing: 'easeOutQuart' });
         
-        // Animate modal appearance
+        setTimeout(() => {
+            anime({ targets: notification, translateX: '100%', opacity: 0, duration: 300, easing: 'easeInQuart', complete: () => notification.remove() });
+        }, 3000);
+    }
+
+    animateModalOpen(modal) {
         anime({
-            targets: modal.querySelector('div:nth-child(1)'), // Target the modal content box
+            targets: modal.querySelector('.transform'),
             scale: [0.8, 1],
             opacity: [0, 1],
             duration: 300,
@@ -428,194 +456,28 @@ class BSSPlusPlatform {
         });
     }
 
-    closeModal() {
-        const modal = document.getElementById('post-modal');
-        if (modal) {
-            // Animate modal disappearance
-            anime({
-                targets: modal.querySelector('div:nth-child(1)'), // Target the modal content box
-                scale: [1, 0.8],
-                opacity: [1, 0],
-                duration: 200,
-                easing: 'easeInQuart',
-                complete: () => {
-                    modal.classList.remove('active');
-                }
-            });
-        }
-        this.currentEditId = null;
-        this.clearForm();
-    }
-
-    confirmDelete(id) {
-        const post = this.posts.find(p => p.id == id);
-        if (!post) return;
-
-        if (confirm(`Are you sure you want to permanently delete post titled "${post.title}"? This cannot be undone and will delete it from the database.`)) {
-            this.deletePost(id);
-        }
+    animateModalClose(modal, callback) {
+        anime({
+            targets: modal.querySelector('.transform'),
+            scale: [1, 0.8],
+            opacity: [1, 0],
+            duration: 200,
+            easing: 'easeInQuart',
+            complete: callback
+        });
     }
     
-    clearForm() {
-        document.getElementById('post-title').value = '';
-        document.getElementById('post-category').value = '';
-        document.getElementById('post-content').value = '';
-        document.getElementById('post-tags').value = '';
-    }
-
-    fillForm(post) {
-        document.getElementById('post-title').value = post.title;
-        document.getElementById('post-category').value = post.category;
-        document.getElementById('post-content').value = post.content;
-        document.getElementById('post-tags').value = Array.isArray(post.tags) ? post.tags.join(', ') : post.tags || '';
-    }
-
-    formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    }
-
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white ${
-            type === 'success' ? 'bg-green-500' : 
-            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
-        
-        // Animate notification
-        anime({
-            targets: notification,
-            translateX: [100, 0],
-            opacity: [0, 1],
-            duration: 300,
-            easing: 'easeOutQuart'
-        });
-        
-        // Remove notification after 3 seconds
-        setTimeout(() => {
-            anime({
-                targets: notification,
-                translateX: [0, 100],
-                opacity: [1, 0],
-                duration: 300,
-                easing: 'easeInQuart',
-                complete: () => notification.remove()
-            });
-        }, 3000);
-    }
-
-    initParticles() {
-        // P5.js particle system for hero background
-        const canvas = document.getElementById('particles-canvas');
-        // Ensure p5 is loaded and the canvas element exists
-        if (!canvas || typeof p5 === 'undefined') return;
-
-        new p5((p) => {
-            let particles = [];
-            const numParticles = 50;
-            let container;
-
-            p.setup = () => {
-                container = document.getElementById('particles-canvas').parentElement;
-                
-                // Ensure the canvas adapts to the parent container
-                const canvas = p.createCanvas(container.offsetWidth, 400);
-                canvas.parent('particles-canvas');
-                
-                for (let i = 0; i < numParticles; i++) {
-                    particles.push({
-                        x: p.random(p.width),
-                        y: p.random(p.height),
-                        vx: p.random(-0.5, 0.5),
-                        vy: p.random(-0.5, 0.5),
-                        size: p.random(2, 6),
-                        opacity: p.random(0.1, 0.3)
-                    });
-                }
-            };
-
-            p.draw = () => {
-                p.clear();
-                
-                particles.forEach(particle => {
-                    // Update position
-                    particle.x += particle.vx;
-                    particle.y += particle.vy;
-                    
-                    // Wrap around edges
-                    if (particle.x < 0) particle.x = p.width;
-                    if (particle.x > p.width) particle.x = 0;
-                    if (particle.y < 0) particle.y = p.height;
-                    if (particle.y > p.height) particle.y = 0;
-                    
-                    // Draw particle
-                    p.fill(27, 69, 113, particle.opacity * 255); // Primary Blue color with alpha
-                    p.noStroke();
-                    p.ellipse(particle.x, particle.y, particle.size);
-                });
-            };
-
-            p.windowResized = () => {
-                if (container) {
-                    p.resizeCanvas(container.offsetWidth, 400);
-                }
-            };
-        });
-    }
-
+    // --- Initial Load Animations ---
     initializeAnimations() {
-        // Hero title typing animation (assuming Typed.js is linked)
-        if (document.getElementById('hero-title')) {
-            new Typed('#hero-title', {
-                strings: ['BSSPlus Manager Platform', 'Your Business Command Center', 'Content Management Simplified'],
-                typeSpeed: 50,
-                backSpeed: 30,
-                backDelay: 2000,
-                loop: true,
-                showCursor: false
-            });
-        }
-
-        // Fade in animations for sections 
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.fade-in').forEach(el => {
-            // Apply initial hidden state (if not already in CSS)
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-
-            // Use intersection observer to trigger animation
-            observer.observe(el);
-            
-            // Add custom animation for visibility
-            if (el.classList.contains('visible')) {
-                 anime({
-                    targets: el,
-                    translateY: [20, 0],
-                    opacity: [0, 1],
-                    duration: 800,
-                    easing: 'easeOutQuart'
-                });
-            }
+        
+        // Animate hero text
+        anime({
+            targets: '#hero-title, #hero-subtitle',
+            translateY: [20, 0],
+            opacity: [0, 1],
+            delay: anime.stagger(100),
+            duration: 800,
+            easing: 'easeOutQuart'
         });
         
         // Animate stats cards
@@ -628,25 +490,90 @@ class BSSPlusPlatform {
             easing: 'easeOutQuart'
         });
     }
+    
+    // --- Canvas/Particle Background ---
+    initParticles() {
+        if (typeof p5 === 'undefined') return;
+        
+        let stars = [];
+        let numStars = 50;
 
+        // Create a new P5 instance
+        const sketch = (p) => {
+            p.setup = () => {
+                const canvasContainer = document.getElementById('particle-bg');
+                p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight).parent('particle-bg');
+                for (let i = 0; i < numStars; i++) {
+                    stars.push(new Star(p.random(p.width), p.random(p.height), p.random(1, 4)));
+                }
+                p.noStroke();
+                p.frameRate(30);
+            };
+
+            p.draw = () => {
+                p.background(15, 17, 23); // var(--bg-dark) approx
+                for (let i = 0; i < stars.length; i++) {
+                    stars[i].update();
+                    stars[i].display();
+                }
+            };
+            
+            p.windowResized = () => {
+                const canvasContainer = document.getElementById('particle-bg');
+                p.resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+            };
+        };
+        
+        // Star class definition inside scope for P5
+        class Star {
+            constructor(x, y, size) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.speed = 0.5;
+                this.color = p.color(150 + p.random(100), 200 + p.random(55)); // White/Gray tones
+            }
+
+            update() {
+                this.x -= this.speed * (this.size / 2); // Move horizontally
+                
+                // Wrap around when star goes off screen
+                if (this.x < 0) {
+                    this.x = p.width;
+                    this.y = p.random(p.height);
+                }
+            }
+
+            display() {
+                p.fill(this.color);
+                p.ellipse(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        // Initialize P5
+        new p5(sketch);
+    }
 }
 
-// Global functions for HTML onclick handlers (needed because they are called directly from HTML attributes)
-// We expose the platform instance globally for access from HTML onclicks
+
+// ------------------------------------------------------------------
+// Global functions for HTML onclick handlers (Wrapper Functions)
+// ------------------------------------------------------------------
+// These map the HTML attribute calls to the renamed class methods
 function openAddModal() {
     window.platform.openAddModal();
 }
 
-function editPost(id) {
-    window.platform.editPost(id);
+function editInteraction(id) { // <-- Renamed global function
+    window.platform.editInteraction(id);
 }
 
-function viewPost(id) {
-    window.platform.viewPost(id);
+function viewInteraction(id) { // <-- Renamed global function
+    window.platform.viewInteraction(id);
 }
 
-function confirmDelete(id) {
-    window.platform.confirmDelete(id);
+function confirmDeleteInteraction(id) { // <-- Renamed global function
+    window.platform.confirmDeleteInteraction(id);
 }
 
 function closeModal() {
@@ -661,6 +588,8 @@ function clearFilters() {
 document.addEventListener('DOMContentLoaded', () => {
     // Only initialize if we are on index.html (i.e., we have a dashboard)
     if (document.getElementById('posts-table-body')) {
-        window.platform = new BSSPlusPlatform();
+        window.platform = new AIChatbotPlatform(); // <-- Renamed Instantiation
     }
+    // If not on index.html, we assume we are on a page that doesn't need the dashboard class (like login.html)
 });
+

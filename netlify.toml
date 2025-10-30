@@ -4,9 +4,17 @@
   # Tells Netlify where your Serverless Functions are
   functions = "netlify/functions"
 
-# This creates a 'friendly' API path:
-# A request to /api/posts will be sent to the netlify/functions/get-posts.js function
+# Redirects all requests to /api/posts/* and /api/posts to the single posts.js function.
+# This allows the posts.js function to handle GET, POST, PUT, and DELETE.
+[[redirects]]
+  from = "/api/posts/*"
+  to = "/.netlify/functions/posts"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/api/posts"
-  to = "/.netlify/functions/get-posts"
+  to = "/.netlify/functions/posts"
   status = 200
+  force = true
+

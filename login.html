@@ -3,201 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BSSPlus Login - Manager Platform</title>
+    <title>BSSPlus Login - Your AI Chatbot</title>
+    <!-- Tailwind CSS CDN for modern utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Anime.js for "graphic automation" (smooth animations) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-text { background: linear-gradient(135deg, #1B4571, #10B981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .login-container { background: linear-gradient(135deg, rgba(27, 69, 113, 0.05), rgba(16, 185, 129, 0.05)); }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-        .btn-primary { background: #1B4571; }
-        .btn-primary:hover { background: #1e3a8a; }
-        .fade-in { opacity: 0; transform: translateY(20px); }
-        .fade-in.visible { opacity: 1; transform: translateY(0); transition: all 0.6s ease; }
-        .shake { animation: shake 0.5s ease-in-out; }
+        /* Custom BSSPlus Branding Colors and Font */
+        :root {
+            --color-primary-blue: #1B4571;
+            --color-secondary-blue: #2563EB;
+            --color-light-green: #10B981;
+            --color-bg-dark: #0f1117; /* Dark background for professional feel */
+            --color-card-bg: #1e293b; /* Slate gray for card background */
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg-dark);
+            color: #f1f5f9; /* Light text */
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Gradient for the main title text */
+        .gradient-text { 
+            background: linear-gradient(135deg, var(--color-primary-blue), var(--color-light-green)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Input focus state matching brand colors */
+        input:focus {
+            border-color: var(--color-light-green) !important;
+            box-shadow: 0 0 0 1px var(--color-light-green) !important;
+        }
+
+        /* Custom shake animation for login failure */
+        .shake {
+            animation: shake 0.5s;
+        }
+
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Initial state for elements to be animated by anime.js */
+        .animated-element {
+            opacity: 0;
+            transform: translateY(20px);
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center login-container">
-    <div class="max-w-md w-full mx-4">
-        <!-- Logo and Header -->
-        <div class="text-center mb-8 fade-in">
-            <img src="resources/bssplus-logo.png" alt="BSSPlus" class="h-16 w-auto mx-auto mb-4">
-            <h1 class="text-3xl font-bold gradient-text mb-2">BSSPlus Manager</h1>
-            <p class="text-gray-600">Sign in to access your platform</p>
+<body>
+
+    <!-- Main Login Container (The card) -->
+    <div id="login-card" class="w-full max-w-md p-8 bg-[--color-card-bg] rounded-2xl shadow-2xl border border-gray-700/50 animated-element">
+        
+        <!-- Animated Header/Logo -->
+        <div id="header-section" class="mb-8 text-center animated-element">
+            <h1 class="text-4xl font-extrabold gradient-text tracking-tight">BSSPlus</h1>
+            <p class="text-gray-400 mt-2 text-lg">AI Chatbot Platform Login</p>
         </div>
 
-        <!-- Login Form -->
-        <div class="bg-white rounded-xl shadow-lg p-8 card-hover fade-in">
-            <form id="login-form" class="space-y-6">
-                <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-                        Username
-                    </label>
-                    <input type="text" id="username" name="username" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           placeholder="Enter your username">
-                </div>
-
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        Password
-                    </label>
-                    <input type="password" id="password" name="password" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           placeholder="Enter your password">
-                </div>
-
-                <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p class="text-sm text-red-600"></p>
-                </div>
-
-                <button type="submit" 
-                        class="w-full btn-primary text-white py-3 rounded-lg font-medium hover:scale-105 transition-transform">
-                    Sign In
-                </button>
-            </form>
-
-            <!-- Demo Credentials -->
-            <div class="mt-6 pt-6 border-t border-gray-200">
-                <p class="text-xs text-gray-500 text-center">
-                    Demo Credentials: Username: admin | Password: b3s8s23
-                </p>
+        <form id="login-form">
+            
+            <!-- Error Message Area -->
+            <div id="error-message" class="hidden bg-red-800/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-4 text-sm animated-element" role="alert">
+                <!-- Error message text will be inserted here -->
             </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="text-center mt-8 fade-in">
-            <p class="text-sm text-gray-500">&copy; 2024 BSSPlus - Building Solid Success. All rights reserved.</p>
-        </div>
+            <!-- Username Field -->
+            <div class="mb-4 animated-element">
+                <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                <input type="text" id="username" name="username" required 
+                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 transition duration-150 ease-in-out">
+            </div>
+
+            <!-- Password Field -->
+            <div class="mb-6 animated-element">
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <input type="password" id="password" name="password" required 
+                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 transition duration-150 ease-in-out">
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="login-button" 
+                    class="w-full px-4 py-3 bg-[--color-primary-blue] text-white font-semibold rounded-lg shadow-lg hover:bg-opacity-90 transition duration-200 ease-in-out transform hover:scale-[1.01] animated-element">
+                Sign In
+            </button>
+        </form>
+        
+        <!-- Footer Info -->
+        <p class="text-center text-xs text-gray-500 mt-6 animated-element">
+            For demo purposes: User: <code class="text-yellow-400">admin</code> | Pass: <code class="text-yellow-400">?</code>
+        </p>
+
     </div>
 
     <script>
         class LoginManager {
             constructor() {
-                this.validCredentials = {
-                    username: 'admin',
-                    password: 'b3s8s23'
-                };
-                this.init();
+                this.form = document.getElementById('login-form');
+                this.submitButton = document.getElementById('login-button');
+                this.errorDiv = document.getElementById('error-message');
+                this.form.addEventListener('submit', this.handleSubmit.bind(this));
+                this.animateEntrance();
             }
-
-            init() {
-                this.initializeAnimations();
-                this.setupEventListeners();
-            }
-
-            initializeAnimations() {
-                // Fade in animations
-                const observerOptions = {
-                    threshold: 0.1,
-                    rootMargin: '0px 0px -50px 0px'
-                };
-
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.classList.add('visible');
-                        }
-                    });
-                }, observerOptions);
-
-                document.querySelectorAll('.fade-in').forEach(el => {
-                    observer.observe(el);
+            
+            // Graphic Automation: Initial Entrance Animation
+            animateEntrance() {
+                // Animate the main card
+                anime({
+                    targets: '#login-card',
+                    opacity: [0, 1],
+                    translateY: [30, 0],
+                    duration: 1000,
+                    easing: 'easeOutQuart'
                 });
 
-                // Animate login form
+                // Animate child elements with stagger
+                const staggeredElements = Array.from(document.querySelectorAll('.animated-element:not(#login-card)'));
                 anime({
-                    targets: '.card-hover',
-                    translateY: [30, 0],
+                    targets: staggeredElements,
                     opacity: [0, 1],
+                    translateY: [20, 0],
                     duration: 800,
-                    delay: 300,
+                    delay: anime.stagger(150, { start: 500 }),
                     easing: 'easeOutQuart'
                 });
             }
 
-            setupEventListeners() {
-                const loginForm = document.getElementById('login-form');
-                loginForm.addEventListener('submit', (e) => this.handleLogin(e));
-
-                // Clear error message on input
-                const inputs = document.querySelectorAll('input');
-                inputs.forEach(input => {
-                    input.addEventListener('input', () => this.clearError());
+            // Graphic Automation: Error shake
+            shakeForm() {
+                this.form.classList.add('shake');
+                anime({
+                    targets: this.form,
+                    translateX: [
+                        { value: -10, duration: 50, easing: 'easeInOutSine' },
+                        { value: 10, duration: 100, easing: 'easeInOutSine' },
+                        { value: -5, duration: 100, easing: 'easeInOutSine' },
+                        { value: 5, duration: 100, easing: 'easeInOutSine' },
+                        { value: 0, duration: 50, easing: 'easeInOutSine' }
+                    ],
+                    duration: 400,
+                    complete: () => {
+                        // Ensure the class is removed if the keyframe approach is used
+                        this.form.classList.remove('shake');
+                    }
+                });
+            }
+            
+            // Visual Feedback: Show Error
+            showError(message) {
+                this.errorDiv.textContent = message;
+                this.errorDiv.classList.remove('hidden');
+                anime({
+                    targets: this.errorDiv,
+                    opacity: [0, 1],
+                    translateY: [10, 0],
+                    duration: 300,
+                    easing: 'easeOutSine'
+                });
+            }
+            
+            // Visual Feedback: Clear Error
+            clearError() {
+                anime({
+                    targets: this.errorDiv,
+                    opacity: [1, 0],
+                    translateY: [0, -10],
+                    duration: 200,
+                    easing: 'easeInSine',
+                    complete: () => {
+                        this.errorDiv.classList.add('hidden');
+                        this.errorDiv.textContent = '';
+                    }
                 });
             }
 
-            handleLogin(e) {
-                e.preventDefault();
-                
-                const username = document.getElementById('username').value.trim();
-                const password = document.getElementById('password').value.trim();
-
-                if (this.validateCredentials(username, password)) {
-                    this.showSuccess();
-                    setTimeout(() => {
-                        this.loginSuccess();
-                    }, 1000);
-                } else {
-                    this.showError('Invalid username or password. Please try again.');
-                    this.shakeForm();
-                }
-            }
-
-            validateCredentials(username, password) {
-                return username === this.validCredentials.username && 
-                       password === this.validCredentials.password;
-            }
-
-            showError(message) {
-                const errorDiv = document.getElementById('error-message');
-                const errorText = errorDiv.querySelector('p');
-                errorText.textContent = message;
-                errorDiv.classList.remove('hidden');
-            }
-
-            clearError() {
-                const errorDiv = document.getElementById('error-message');
-                errorDiv.classList.add('hidden');
-            }
-
-            showSuccess() {
-                const submitButton = document.querySelector('button[type="submit"]');
-                submitButton.textContent = 'Signing In...';
-                submitButton.disabled = true;
-                submitButton.classList.add('bg-green-600');
-            }
-
-            shakeForm() {
-                const form = document.getElementById('login-form');
-                form.classList.add('shake');
-                setTimeout(() => {
-                    form.classList.remove('shake');
-                }, 500);
+            // Visual Feedback: Show Success State on Button
+            showSuccessState() {
+                this.submitButton.textContent = 'Signing In...';
+                this.submitButton.disabled = true;
+                anime({
+                    targets: this.submitButton,
+                    backgroundColor: [getComputedStyle(document.documentElement).getPropertyValue('--color-primary-blue'), getComputedStyle(document.documentElement).getPropertyValue('--color-light-green')],
+                    duration: 500,
+                    easing: 'easeInOutQuad'
+                });
             }
 
             loginSuccess() {
-                // Store login session
+                // NOTE: Using localStorage for a simple client-side session simulation
+                // For a production application, full Firebase Authentication would be used.
                 localStorage.setItem('bssplus_logged_in', 'true');
                 localStorage.setItem('bssplus_username', 'admin');
                 
                 // Redirect to main dashboard
                 window.location.href = 'index.html';
             }
+
+            async handleSubmit(event) {
+                event.preventDefault();
+                this.clearError();
+
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (username === 'admin' && password === 'admin123') {
+                    this.showSuccessState();
+                    // Simulate API call delay for better user experience
+                    await new Promise(resolve => setTimeout(resolve, 1200));
+                    this.loginSuccess();
+                } else {
+                    this.shakeForm();
+                    this.showError('Invalid username or password. Try `admin` / `admin123`.');
+                }
+            }
         }
 
-        // Initialize login manager
+        // Initialize login manager on DOM load
         document.addEventListener('DOMContentLoaded', () => {
-            // Check if already logged in
+            // Check if already logged in (simulated check)
             if (localStorage.getItem('bssplus_logged_in') === 'true') {
+                // If logged in, skip login and redirect immediately
                 window.location.href = 'index.html';
                 return;
             }
@@ -207,3 +248,4 @@
     </script>
 </body>
 </html>
+
