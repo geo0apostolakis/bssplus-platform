@@ -4,15 +4,14 @@
   # Tells Netlify where your Serverless Functions are
   functions = "netlify/functions"
 
-# This redirects any request to /api/posts or /api/posts/:id to the posts.js function
+# Redirect for the consolidated 'posts' CRUD function
 [[redirects]]
   from = "/api/posts/*"
   to = "/.netlify/functions/posts"
   status = 200
 
-# This redirects any request to /api/interactions or /api/interactions/:id to the interactions.js function
+# New redirect for the 'interactions' CRUD function
 [[redirects]]
   from = "/api/interactions/*"
   to = "/.netlify/functions/interactions"
   status = 200
-

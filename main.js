@@ -22,7 +22,6 @@ class BSSPlusPlatform {
         this.initializeAnimations();
         this.renderPosts();
         this.initParticles();
-        // this.initializeAPI(); // Placeholder for future complex API init
         await this.loadInteractions(); // Load new interactions data
     }
     
@@ -45,7 +44,7 @@ class BSSPlusPlatform {
             
             if (result.success) {
                 // Sort posts by created_date, descending
-                this.posts = result.data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+                this.posts = result.data.sort((a, b) => new Date(b.created_date || b.created_at) - new Date(a.created_date || a.created_at));
                 this.renderStats();
                 this.initChart();
                 this.showNotification(`Successfully loaded ${this.posts.length} knowledge posts.`, 'success');
@@ -406,11 +405,11 @@ class BSSPlusPlatform {
             xAxis: {
                 type: 'category',
                 data: dates,
-                axisLabel: { color: var(--text-muted) }
+                axisLabel: { color: 'var(--text-muted)' }
             },
             yAxis: {
                 type: 'value',
-                axisLabel: { color: var(--text-muted) },
+                axisLabel: { color: 'var(--text-muted)' },
                 splitLine: { lineStyle: { color: '#313642' } }
             },
             series: [
@@ -579,4 +578,3 @@ document.addEventListener('DOMContentLoaded', () => {
         window.platform = new BSSPlusPlatform();
     }
 });
-

@@ -1,2 +1,2 @@
-/api/posts    /.netlify/functions/posts    200
-/api/interactions    /.netlify/functions/interactions    200
+/api/posts/* /.netlify/functions/posts    200
+/api/interactions/* /.netlify/functions/interactions    200

@@ -1,0 +1,8 @@
+{
+  "name": "ai-chatbot-functions",
+  "version": "1.0.0",
+  "description": "Dependencies for Netlify Serverless Functions for the AI Chatbot backend.",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.5"
+  }
+}
