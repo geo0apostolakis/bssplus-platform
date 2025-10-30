@@ -1,8 +1,0 @@
-{
-  "name": "bssplus-platform-functions",
-  "version": "1.0.0",
-  "description": "Dependencies for Netlify Serverless Functions",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.43.5"
-  }
-}

@@ -4,17 +4,15 @@
   # Tells Netlify where your Serverless Functions are
   functions = "netlify/functions"
 
-# Redirects all requests to /api/posts/* and /api/posts to the single posts.js function.
-# This allows the posts.js function to handle GET, POST, PUT, and DELETE.
+# This redirects any request to /api/posts or /api/posts/:id to the posts.js function
 [[redirects]]
   from = "/api/posts/*"
   to = "/.netlify/functions/posts"
   status = 200
-  force = true
 
+# This redirects any request to /api/interactions or /api/interactions/:id to the interactions.js function
 [[redirects]]
-  from = "/api/posts"
-  to = "/.netlify/functions/posts"
+  from = "/api/interactions/*"
+  to = "/.netlify/functions/interactions"
   status = 200
-  force = true
 
